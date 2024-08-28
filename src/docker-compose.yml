@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: measure-app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - db
+
+  db:
+    image: postgres:14-alpine
+    container_name: measure-db
+    environment:
+      POSTGRES_USER: measure_user
+      POSTGRES_PASSWORD: measure_password
+      POSTGRES_DB: measure_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
