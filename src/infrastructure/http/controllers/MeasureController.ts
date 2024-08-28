@@ -52,7 +52,7 @@ export class MeasureController {
             const { measure_type } = req.query;
             const result = await this.measureService.listMeasures(
                 customer_code,
-                measure_type as string | undefined
+                measure_type as MeasureType | undefined
             );
             res.status(200).json(result);
         } catch (error) {

@@ -75,6 +75,16 @@ describe('MeasureService', () => {
             expect(mockRepository.update).toHaveBeenCalled();
         });
 
+        it('deve lançar erro para confirmação duplicada', async () => {
+            const mockMeasure = new Measure('uuid123', 'CUST001', new Date(), MeasureType.WATER, 100, 'url');
+            mockMeasure.confirm(100);
+            mockRepository.findByUuid.mockResolvedValue(mockMeasure);
+
+            await expect(
+                measureService.confirmMeasure('uuid123', 110)
+            ).rejects.toThrow(MeasureErrors.ConfirmationDuplicate);
+        });
+
         it('deve lançar erro para medição não encontrada', async () => {
             mockRepository.findByUuid.mockResolvedValue(null);
 
@@ -109,10 +119,18 @@ describe('MeasureService', () => {
             ];
             mockRepository.findAllByCustomer.mockResolvedValue(mockMeasures);
 
-            const result = await measureService.listMeasures('CUST001', 'WATER');
+            const result = await measureService.listMeasures('CUST001', MeasureType.WATER);
 
             expect(result.measures).toHaveLength(1);
-            expect(result.measures[0]).toHaveProperty('measure_type', 'WATER');
+            expect(result.measures[0]).toHaveProperty('measure_type', MeasureType.WATER);
+        });
+
+        it('deve lançar erro quando nenhuma medição é encontrada', async () => {
+            mockRepository.findAllByCustomer.mockResolvedValue([]);
+
+            await expect(
+                measureService.listMeasures('CUST001')
+            ).rejects.toThrow(MeasureErrors.MeasuresNotFound);
         });
     });
 });
