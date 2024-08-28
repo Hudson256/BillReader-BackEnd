@@ -8,7 +8,7 @@ export function errorHandler(err: Error, req: Request, res: Response, next: Next
     if (err instanceof MeasureErrors.InvalidData) {
         return res.status(400).json({ error: err.message });
     }
-    if (err instanceof MeasureErrors.DoubleReport) {
+    if (err instanceof MeasureErrors.ConfirmationDuplicate) {
         return res.status(409).json({ error: err.message });
     }
     if (err instanceof MeasureErrors.MeasureNotFound) {
@@ -17,7 +17,7 @@ export function errorHandler(err: Error, req: Request, res: Response, next: Next
     if (err instanceof MeasureErrors.ConfirmationDuplicate) {
         return res.status(409).json({ error: err.message });
     }
-    if (err instanceof MeasureErrors.InvalidType) {
+    if (err instanceof MeasureErrors.InvalidData) {
         return res.status(400).json({ error: err.message });
     }
 
