@@ -26,29 +26,14 @@ export class MeasureService {
      * @throws {MeasureErrors.InvalidType | MeasureErrors.DoubleReport}
      */
     async uploadMeasure(image: string, customerCode: string, measureDatetime: Date, measureType: MeasureType): Promise<UploadMeasureResult> {
-        // Validar o tipo de dados dos parâmetros
-        if (!isBase64(image.split(',')[1])) {
-            throw new MeasureErrors.InvalidData('Imagem inválida: deve ser uma string base64');
-        }
-        if (typeof customerCode !== 'string' || customerCode.trim() === '') {
-            throw new MeasureErrors.InvalidData('Código do cliente inválido');
-        }
-        if (!(measureDatetime instanceof Date) || isNaN(measureDatetime.getTime())) {
-            throw new MeasureErrors.InvalidData('Data de medição inválida');
-        }
-        if (!Object.values(MeasureType).includes(measureType)) {
-            throw new MeasureErrors.InvalidData('Tipo de medição inválido');
-        }
+        this.validateUploadParams(image, customerCode, measureDatetime, measureType);
 
-        // Verificar se já existe uma leitura no mês
         const existingMeasure = await this.measureRepository.findByMonthAndType(customerCode, measureType, measureDatetime);
         if (existingMeasure) {
-            throw new MeasureErrors.ConfirmationDuplicate('Já existe uma leitura para este tipono mês atual');
+            throw new MeasureErrors.DoubleReport();
         }
 
-        // Integrar com a API de LLM (Gemini) para extrair o valor da imagem
         const processedImage = await this.geminiAPI.processImage(image);
-
         const measure = new Measure(
             processedImage.measureUuid,
             customerCode,
@@ -69,44 +54,39 @@ export class MeasureService {
     }
 
     async confirmMeasure(measureUuid: string, confirmedValue: number): Promise<{ success: boolean }> {
-        // Validar o tipo de dados dos parâmetros
-        if (typeof measureUuid !== 'string' || measureUuid.trim() === '') {
-            throw new MeasureErrors.InvalidData('Os dados fornecidos no corpo darequisição são inválidos');
+        if (!measureUuid || typeof measureUuid !== 'string') {
+            throw new MeasureErrors.InvalidData('UUID da medição inválido');
         }
         if (typeof confirmedValue !== 'number' || isNaN(confirmedValue)) {
-            throw new MeasureErrors.InvalidData('Os dados fornecidos no corpo darequisição são inválidos');
+            throw new MeasureErrors.InvalidData('Valor confirmado inválido');
         }
 
-        // Verificar se o código de leitura informado existe
         const measure = await this.measureRepository.findByUuid(measureUuid);
         if (!measure) {
-            throw new MeasureErrors.MeasureNotFound('Leitura não encontrada');
+            throw new MeasureErrors.MeasureNotFound();
         }
 
-        // Verificar se o código de leitura já foi confirmado
         if (measure.isConfirmed) {
-            throw new MeasureErrors.ConfirmationDuplicate('Leitura do mês já realizada');
+            throw new MeasureErrors.ConfirmationDuplicate();
         }
 
-        // Salvar no banco de dados o novo valor informado
         measure.confirm(confirmedValue);
         await this.measureRepository.update(measure);
-        
-        logger.info(`Medição confirmada: ${measureUuid}`);
+        logger.info(`Measure confirmed: ${measureUuid}`);
 
         return { success: true };
     }
 
     async listMeasures(customerCode: string, measureType?: string): Promise<ListMeasuresResult> {
-        if (measureType && !this.isValidMeasureType(measureType)) {
-            throw new MeasureErrors.InvalidData('Parâmetro measure typediferente de WATER ou GAS');
+        if (typeof customerCode !== 'string' || customerCode.trim() === '') {
+            throw new MeasureErrors.InvalidData('Código do cliente inválido');
         }
 
-        const type = measureType ? measureType.toUpperCase() as MeasureType : undefined;
-        const measures = await this.measureRepository.findAllByCustomer(customerCode, type);
+        const type = measureType ? this.validateAndConvertMeasureType(measureType) : undefined;
 
+        const measures = await this.measureRepository.findAllByCustomer(customerCode, type);
         if (measures.length === 0) {
-            throw new MeasureErrors.MeasureNotFound('Nenhum registro encontrado');
+            throw new MeasureErrors.MeasuresNotFound();
         }
 
         return {
@@ -121,8 +101,27 @@ export class MeasureService {
         };
     }
 
-    private isValidMeasureType(type: string): boolean {
-        return Object.values(MeasureType).includes(type.toUpperCase() as MeasureType);
+    private validateUploadParams(image: string, customerCode: string, measureDatetime: Date, measureType: MeasureType): void {
+        if (!isBase64(image)) {
+            throw new MeasureErrors.InvalidData('Imagem inválida: deve ser uma string base64');
+        }
+        if (typeof customerCode !== 'string' || customerCode.trim() === '') {
+            throw new MeasureErrors.InvalidData('Código do cliente inválido');
+        }
+        if (!(measureDatetime instanceof Date) || isNaN(measureDatetime.getTime())) {
+            throw new MeasureErrors.InvalidData('Data de medição inválida');
+        }
+        if (!Object.values(MeasureType).includes(measureType)) {
+            throw new MeasureErrors.InvalidType();
+        }
+    }
+
+    private validateAndConvertMeasureType(measureType: string): MeasureType {
+        const upperCaseType = measureType.toUpperCase();
+        if (upperCaseType !== 'WATER' && upperCaseType !== 'GAS') {
+            throw new MeasureErrors.InvalidType();
+        }
+        return upperCaseType as MeasureType;
     }
 }
 

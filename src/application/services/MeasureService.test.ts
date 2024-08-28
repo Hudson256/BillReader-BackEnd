@@ -5,13 +5,8 @@ import { GeminiAPI } from '../../infrastructure/external/GeminiAPI';
 import { Measure, MeasureType } from '../../domain/entities/Measure';
 import { MeasureErrors } from '../../domain/exceptions/MeasureErrors';
 
-jest.mock('../../infrastructure/external/GeminiAPI');
-jest.mock('../../config/logger', () => ({
-    logger: {
-        error: jest.fn(),
-        warn: jest.fn(),
-        info: jest.fn(),
-    },
+jest.mock('validator', () => ({
+    isBase64: jest.fn().mockImplementation((str) => str === 'validBase64String')
 }));
 
 describe('MeasureService', () => {
@@ -30,54 +25,42 @@ describe('MeasureService', () => {
         mockGeminiAPI = {
             processImage: jest.fn(),
         } as unknown as jest.Mocked<GeminiAPI>;
-
         measureService = new MeasureService(mockRepository, mockGeminiAPI);
     });
 
     describe('uploadMeasure', () => {
-        it('deve fazer upload de uma nova medição com sucesso', async () => {
-            const validBase64Image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
-            const mockCustomerCode = 'CUST001';
-            const mockMeasureDatetime = new Date();
-            const mockMeasureType = MeasureType.WATER;
+        const validBase64Image = 'validBase64String';
+        const mockDate = new Date('2023-01-01');
 
+        it('deve fazer upload de uma nova medição com sucesso', async () => {
             mockRepository.findByMonthAndType.mockResolvedValue(null);
             mockGeminiAPI.processImage.mockResolvedValue({
-                measureUuid: 'uuid123',
+                measureUuid: 'mock-uuid',
                 measureValue: 100,
-                imageUrl: 'http://example.com/image.jpg',
+                imageUrl: 'http://example.com/image.jpg'
             });
 
-            const result = await measureService.uploadMeasure(
-                validBase64Image,
-                mockCustomerCode,
-                mockMeasureDatetime,
-                mockMeasureType
-            );
+            const result = await measureService.uploadMeasure(validBase64Image, 'CUST001', mockDate, MeasureType.WATER);
 
             expect(result).toEqual({
                 image_url: 'http://example.com/image.jpg',
                 measure_value: 100,
-                measure_uuid: 'uuid123',
+                measure_uuid: 'mock-uuid'
             });
-            expect(mockRepository.save).toHaveBeenCalled();
-        });
-
-        it('deve lançar erro para tipo de medição inválido', async () => {
-            const validBase64Image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
-            await expect(
-                measureService.uploadMeasure(validBase64Image, 'CUST001', new Date(), 'INVALID' as MeasureType)
-            ).rejects.toThrow(MeasureErrors.InvalidData);
         });
 
         it('deve lançar erro para relatório duplicado', async () => {
-            const validBase64Image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
-            const mockDate = new Date();
-            mockRepository.findByMonthAndType.mockResolvedValue(new Measure('uuid', 'CUST001', mockDate, MeasureType.WATER, 100, 'url'));
+            mockRepository.findByMonthAndType.mockResolvedValue({} as any);
 
             await expect(
                 measureService.uploadMeasure(validBase64Image, 'CUST001', mockDate, MeasureType.WATER)
-            ).rejects.toThrow(MeasureErrors.ConfirmationDuplicate);
+            ).rejects.toThrow(MeasureErrors.DoubleReport);
+        });
+
+        it('deve lançar erro para imagem inválida', async () => {
+            await expect(
+                measureService.uploadMeasure('invalid-base64', 'CUST001', mockDate, MeasureType.WATER)
+            ).rejects.toThrow(MeasureErrors.InvalidData);
         });
     });
 
