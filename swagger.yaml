@@ -1,0 +1,196 @@
+openapi: 3.0.0
+info:
+  title: BillReader API
+  version: 1.0.0
+  description: API para gerenciamento de medições de água e gás
+servers:
+  - url: https://api.billreader.com/v1
+tags:
+  - name: Medições
+    description: Operações relacionadas a medições de água e gás
+paths:
+  /upload:
+    post:
+      summary: Faz upload de uma nova medição
+      tags:
+        - Medições
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeasureInput'
+      responses:
+        '200':
+          description: Medição criada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeasureOutput'
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '409':
+          $ref: '#/components/responses/DoubleReport'
+  /confirm:
+    patch:
+      summary: Confirma uma medição existente
+      tags:
+        - Medições
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmInput'
+      responses:
+        '200':
+          description: Medição confirmada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmOutput'
+        '400':
+          $ref: '#/components/responses/InvalidData'
+        '404':
+          $ref: '#/components/responses/MeasureNotFound'
+        '409':
+          $ref: '#/components/responses/ConfirmationDuplicate'
+  /{customer_code}/list:
+    get:
+      summary: Lista medições de um cliente
+      tags:
+        - Medições
+      parameters:
+        - in: path
+          name: customer_code
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: measure_type
+          schema:
+            type: string
+            enum: [WATER, GAS]
+      responses:
+        '200':
+          description: Lista de medições
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeasureList'
+        '400':
+          $ref: '#/components/responses/InvalidType'
+        '404':
+          $ref: '#/components/responses/MeasuresNotFound'
+
+components:
+  schemas:
+    MeasureInput:
+      type: object
+      required:
+        - image
+        - customer_code
+        - measure_datetime
+        - measure_type
+      properties:
+        image:
+          type: string
+          format: base64
+        customer_code:
+          type: string
+        measure_datetime:
+          type: string
+          format: date-time
+        measure_type:
+          type: string
+          enum: [WATER, GAS]
+    MeasureOutput:
+      type: object
+      properties:
+        image_url:
+          type: string
+        measure_value:
+          type: number
+        measure_uuid:
+          type: string
+    ConfirmInput:
+      type: object
+      required:
+        - measure_uuid
+        - confirmed_value
+      properties:
+        measure_uuid:
+          type: string
+        confirmed_value:
+          type: number
+    ConfirmOutput:
+      type: object
+      properties:
+        success:
+          type: boolean
+    MeasureList:
+      type: object
+      properties:
+        customer_code:
+          type: string
+        measures:
+          type: array
+          items:
+            type: object
+            properties:
+              measure_uuid:
+                type: string
+              measure_datetime:
+                type: string
+                format: date-time
+              measure_type:
+                type: string
+              has_confirmed:
+                type: boolean
+              image_url:
+                type: string
+  responses:
+    InvalidData:
+      description: Dados inválidos
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    DoubleReport:
+      description: Já existe uma leitura para este tipo no mês atual
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    MeasureNotFound:
+      description: Medição não encontrada
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ConfirmationDuplicate:
+      description: Medição já confirmada
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InvalidType:
+      description: Tipo de medição não permitida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    MeasuresNotFound:
+      description: Nenhuma leitura encontrada
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      properties:
+        error_code:
+          type: string
+        error_description:
+          type: string
