@@ -10,3 +10,5 @@
 {"level":"info","message":"Measure confirmed: uuid123","service":"measure-service"}
 {"level":"info","message":"Measure saved: mock-uuid","service":"measure-service"}
 {"level":"info","message":"Measure confirmed: uuid123","service":"measure-service"}
+{"level":"info","message":"Measure saved: mock-uuid","service":"measure-service"}
+{"level":"info","message":"Measure confirmed: uuid123","service":"measure-service"}
