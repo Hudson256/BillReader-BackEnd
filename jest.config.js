@@ -1,4 +1,4 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
+
 module.exports = {
     preset: "ts-jest",
     testEnvironment: "node",
@@ -9,7 +9,7 @@ module.exports = {
     moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
     setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
     testMatch: [
-        "**/__tests__/**/*.test.[jt]s?(x)",
+        "**/__tests__*.test.[jt]s?(x)",
         "**/?(*.)+(spec|test).[jt]s?(x)"
     ],
 };

@@ -10,7 +10,7 @@ describe('MeasureRepository', () => {
         mockDbConnection = {
             measures: {
                 findOne: jest.fn(),
-                // ... mock other methods as needed
+
             }
         };
         repository = new MeasureRepository(mockDbConnection);
@@ -56,7 +56,6 @@ describe('MeasureRepository', () => {
             expect(result?.measureUuid).toBe('uuid1');
         });
 
-        // ... outros testes ...
     });
 
     describe('findAllByCustomer', () => {

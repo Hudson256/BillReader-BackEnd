@@ -37,13 +37,13 @@ describe('MeasureService', () => {
             mockGeminiAPI.processImage.mockResolvedValue({
                 measureUuid: 'mock-uuid',
                 measureValue: 100,
-                imageUrl: 'http://example.com/image.jpg'
+                imageUrl: 'https://www.shutterstock.com/shutterstock/photos/1487016125/display_1500/stock-vector-product-code-line-bar-stickers-with-barcode-for-scan-uniquecode-bars-retail-reader-vector-isolated-1487016125.jpg'
             });
 
             const result = await measureService.uploadMeasure(validBase64Image, 'CUST001', mockDate, MeasureType.WATER);
 
             expect(result).toEqual({
-                image_url: 'http://example.com/image.jpg',
+                image_url: 'https://www.shutterstock.com/shutterstock/photos/1487016125/display_1500/stock-vector-product-code-line-bar-stickers-with-barcode-for-scan-uniquecode-bars-retail-reader-vector-isolated-1487016125.jpg',
                 measure_value: 100,
                 measure_uuid: 'mock-uuid'
             });

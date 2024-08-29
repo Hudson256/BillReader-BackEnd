@@ -5,9 +5,9 @@ import { IMeasureRepository } from '../../../domain/interfaces/IMeasureRepositor
 @injectable()
 export class MeasureRepository implements IMeasureRepository {
     private measures: Measure[] = [];
-    private dbConnection: any; // Substitua 'any' pelo tipo correto da sua conexão de banco de dados
+    private dbConnection: any; 
 
-    constructor(@inject('DbConnection') dbConnection: any) { // Substitua 'any' pelo tipo correto da sua conexão de banco de dados
+    constructor(@inject('DbConnection') dbConnection: any) { 
         this.dbConnection = dbConnection;
     }
 
