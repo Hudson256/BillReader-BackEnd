@@ -11,6 +11,10 @@ app.use('/api', measureRoutes);
 
 app.use(errorHandler);
 
+app.get('/', (req, res) => {
+    res.send('BillReader-BackEnd está funcionando!');
+});
+
 const port = config.port;
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
