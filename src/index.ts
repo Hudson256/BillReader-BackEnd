@@ -15,7 +15,9 @@ app.get('/', (req, res) => {
     res.send('BillReader-BackEnd está funcionando!');
 });
 
-const port = config.port;
+const port = config.port || 3000;
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
+
+export default app;
