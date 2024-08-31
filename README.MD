@@ -55,7 +55,7 @@ Para detalhes completos da API, consulte o arquivo swagger.yaml.
 
 ## Contribuições
 
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues e pull requests. Este projeto segue o padrão de código estabelecido por ESLint e Prettier, então certifique-se de rodar o linter antes de submeter suas alterações.
+Contribuições são bem-vindas! Sinta-se à vontade para abrir issues e pull requests.
 
 ## Licença
 
